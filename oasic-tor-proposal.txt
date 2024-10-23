@@ -1,0 +1,345 @@
+Filename: ???
+(Working) title:
+Onion Association SANs In Certificates (OASIC)
+Author: Paul Syverson and ???
+Created: ???
+Status: ???
+
+Overview:
+
+Onion Association is the authentication or discovery and
+authentication of the association of a meaningful name with a
+self-authenticating address. The paradigmatic example of a meaningful
+name for Onion Association is a registered domain name. (In practice a
+registered domain name might not be meaningful to people, but they
+SHOULD be resolvable by existing DNS infrastructure.) The paradigmatic
+example of a self-authenticating address is an onion address.
+
+This proposal addresses the standardization of Onion Association that
+is authenticated by the certificate used in a TLS connection and that
+MUST be expressed in a Subject Alternative Name (SAN) in the TLS
+certificate. Such usage MUST be compatible with existing DV
+certificate issuance protocol standards, though Onion Association
+certificates MAY be EV or OV certificates.  Usage that leverages
+changes to TLS certificate format is described in Proposal ???  Onion
+Association TLS Certificate Extensions (OATCE).
+
+Motivation:
+
+Multiple means of Onion Association have been proposed and deployed.
+These include, e.g., Onion-Location [O-L] and SecureDrop [SECUREDROP].
+Multiple descriptions of attacks on these have been published, as have
+alternative solutions that leverage TLS certificates [SECDEV19]
+[SATA-WPES21] as well as the Certificate Transparency (CT)
+infrastructure [SAUTE-WPES22] [OLF]. These solutions involve Subject
+Alt Names (SANs) in TLS certificates comprised of onion addresses as
+subdomains of registered domain names in TLS certificates.  For
+Self-Authenticating Traditional Addresses (SATAs) receiving a
+certificate with such a SAN in a TLS handshake implies that an
+authentication header should be expected in that session. For basic
+sauteed onions, no such header should be expected.  But, the SAN
+encoding of Onion Association in the certificate is the same for both
+in above cited work. Also, sauteed onions imply an onion service
+descriptor in the HSDir DHT, but SATAs might not.  This proposal
+specifies SAN encodings that resolve these and other ambiguities of
+Onion Association usage. We will refer to such a SAN encoding as
+described in this paragraph as an OASAN.
+
+Design Overview:
+
+OASANs have multiple property alternatives that group into three categories
+
+Property Category 1 (meaningful name resolvability and reachability)
+
+1a Meaningful name MUST be resolvable without utilizing Tor protocols
+   and/or resolvable via Tor exit circuit. Resolution MUST be to an
+   address of a service (e.g. IP address) reachable without requiring
+   Tor protocols and/or via Tor exit circuit.
+
+1b Meaningful name is a valid dNSName but is OPTIONALLY not resolvable
+   by clients to a network address of a reachable service.
+
+1c Meaningful name is not DNS resolvable.
+
+Note that categorization as 1b is meant to indicate reachability by
+clients during normal operation rather than reachability by CAs during
+certificate issuance.  A Category 1b URL MUST be resolvable and
+reachable during and for certificate issuance.
+
+Category 1c is for a meaningful name that is unresolvable because it
+is not a standards compliant domain name (e.g.,
+example.com.securedrop.tor.onion).
+
+Property Category 2 (onion address resolvability and reachability)
+
+2a Onion address MUST be resolvable via the HSDir DHT and MUST be
+   reachable via onion service protocols.
+
+2b Onion address might not be resolvable via HSDir DHT and/or
+   reachable via onion service protocols.
+
+This proposal covers use cases where the meaningful name is a
+DNS-resolvable and reachable domain or the onion address is resolvable
+and reachable using onion service protocols or both. Categories 1 and
+2 thus reflect four actual possibilities (1a,2a), (1a,2b), (1b,2a), (1c,2a).
+
+Property Category 3 (Onion Association authentication)
+
+3a The binding of a pair in Onion Association MUST be authenticated by
+   TLS and an OASAN in the TLS certificate used in the TLS handshake
+   and MUST also be authenticated by a signature on an Onion
+   Association header that uses a private key corresponding to the
+   onion address in an OASAN in the TLS certificate.
+
+3b The binding of a pair in Onion Association MUST be authenticated by
+   TLS and an OASAN in the TLS certificate used in the TLS handshake.
+   The binding MIGHT not be authenticated by a header signed using the
+   private key of the onion address in an OASAN in the TLS certificate.
+
+As an example of case 3a, a private-onion-key-signed header
+could be sent after the TLS handshake as describe in [SATA-WPES21].
+Such a header may also contain contextual trust labels as described
+in [SATA-WPES21] [SATTESTATION-CSF], though we will not further
+discuss contextual trust in this proposal.
+
+Certificate SANs
+
+An Onion Association TLS certificate MUST contain a SAN that is either a
+dNSName or an onion address. (Though permitted as a SAN in current
+CA/B Forum Baseline Requirements, we do not consider in this proposal
+an OASAN with a meaningful name that is an IPAddress GeneralName.)
+
+If the meaningful name is a SAN of the TLS certificate, then for
+the client to authenticate Onion Association of the meaningful name
+with the onion address, the onion address MUST occur as a subdomain of
+the meaningful name in a SAN of the certificate.
+
+If the meaningful name is a SAN of the certificate, then for the
+client to authenticate Onion Association of the meaningful name with
+the onion address, the onion address MUST occur as a subdomain of that
+meaningful name in another SAN of the certificate.
+
+If the meaningful name cannot function as a SAN in a TLS
+certificate, then the meaningful name MUST be encoded as a subdomain
+of the onion address, which in that case is also a SAN in the
+certificate. (E.g., example.com.securedrop.tor.onion is neither a
+dNSName nor a valid onion domain [ONIONSPEC] and cannot be validated
+as a SAN under existing CA/B Forum Baseline Requirements.)
+
+Scope:
+
+If resolvable, meaningful names SHOULD be TLD+1 names or subdomains
+thereof. (Thus the meaningful name is not expected to be a TLD.)
+
+Other ways of connecting up onion addresses with registered domain
+names that obscure their association, e.g., redirects using
+alternative service (alt svc) headers are not considered Onion
+Association.  Because of attacks these facilitate [SECDEV19]
+[SATA-WPES21] we recommend that browsers and other clients be
+configured to reject such alt svc headers, but in any case they do not
+count as Onion Association and are thus out of scope for this proposal.
+
+Other types of discovery or authentication are not in scope, e.g., DNS
+for discovery of IP address associated with a domain name. TLS
+certificates for authentication of connection to a domain name (more
+completely and generally, a URL). 
+
+Specification:
+
+'meaningfulname' represents the encoding of the meaningful name that
+is associated with [onion-address] in the following specifications of
+SANs for Onion Association. Though we do not explicitly represent it,
+meaningfulname may include one or more subdivisions separated by
+periods. '[onion-address]' is a 56-character v3 onion address as
+specified in [ONIONSPEC].
+
+A. Meaningful-name-SAN-based OASAN
+
+Address formats:
+[onion-address]onion[0-4].meaningfulname
+
+For efficiency, the partition of possibilities based on property
+categories above are encoded as a single decimal digit as follows
+
+onion0 1a,2a,3a
+onion1 1a,2a,3b
+onion2 1b,2a,3a
+onion3 1b,2a,3b
+onion4 1a,2b,3a
+
+As already noted, there is no practical case corresponding to (1b,2b)
+(regardless of 3a or 3b). There is also no practical case
+corresponding to (1a,2b,3b): In such a setting the onion address is not
+an address of a host accessible via onion service protocols nor is it
+used to provide additional authentication as the encoding of a public
+key corresponding to a signed header. 
+
+B. Onion-address-SAN-based OASAN
+
+Address format:
+meaningfulname.[onion-address].onion[5-6]
+
+onion5 1c,2a,3a
+onion6 1c,2a,3b
+
+If the certificate contains any OASAN corresponding case 3a
+(in other words cases onion0, onion2, onion4, or onion5), then
+the certificate MUST NOT contain any OASAN corresponding to case 3b
+(in other words cases onion1, onion3, or onion6).
+
+Client Behavior:
+
+Clients are expected to conform to RFC 5280. CT logs are one basis for
+Onion Association discovery in the face of censorship of access via
+the registered domain [SAUTE-WPES22]. Clients might thus learn of TLS
+certificates containing OASANs normally---during connection to a
+service (whether via traditional internet protocols or via onion
+service protocols) or from a CT log monitor or by other
+means. Regardless of how the certificate is discovered, when
+connecting to a service, the appropriate client behavior is determined
+by both the address displayed in the URL bar and the TLS certificate.
+
+1. The URL is a SATA of the form
+https://example.com/?onion=[onion-address]
+
+In this case, the TLS certificate MUST contain an OASAN with
+meaningful name example.com and onion address [onion-address].  The
+OASAN MUST be in the format corresponding to onion0, onion2, or onion4
+cases. If case onion0, the client MUST connect via appropriate
+protocols to example.com or [onion-address].onion. If case onion2, the
+client MUST connect via onion service protocols to
+[onion-address].onion. If case onion4, the client MUST connect to
+example.com via ordinary IP.
+
+The client MUST verify that it receives a SATA header, an HTTP header
+containing an Onion Assocation with meaningful address and onion
+address matching the URL. The client MUST verify that these match an
+OASAN contained in the TLS certificate, that the current local time at
+time of connection is within the validity window specified in the
+header, and that the header is signed by the onion key corresponding
+to [onion-address].
+
+If any of the requirements or checks fail, the client MUST enter
+an error state.
+
+2. The connection is to a registered domain URL possibly together with
+path and/or query info but MUST NOT contain an onion query string
+
+In this case, the TLS certificate MUST NOT contain an
+OASAN corresponding to cases onion0, onion2, onion4, or onion5.
+The TLS certificate MAY contain an OASAN corresponding to cases
+onion1, onion3, or onion6.
+
+3. The meaningful name in the URL is neither reachable nor resolvable.
+
+In this case, the client MAY connect according to the semantics
+of resolution for the meaningful name, for example, if the URL
+is example.com.securedrop.tor.onion then the address is locally converted
+to an onion address according to a local HTTPS-Everywhere ruleset, and
+the client connects to that onion address via onion service protocols.
+
+If when connecting to the onion address the client performs a TLS
+handshake, the TLS certificate MAY contain an onion5 or onion6 OASAN.
+The certificate MUST NOT contain both an onion5 and an onion6 OASAN.
+
+If the TLS certificate contains an onion5 OASAN with meaningful name
+or onion address corresponding to the URL and the local-rule Onion
+Association, then the client MUST verify that the certificate contains
+an onion5 OASAN with meaningful name and onion address corresponding
+to the URL and the local-rule Onion Association. And the client MUST
+receive a SATA header and MUST perform the verifications as given
+under 1. above.
+
+If the TLS certificate contains an onion6 OASAN with meaningful name
+or onion address corresponding to the URL and the local-rule Onion
+Association, then the client SHOULD verify that the certificate
+contains an onion6 OASAN with meaningful name and onion address
+corresponding to the URL and the local-rule Onion Association.
+
+
+Implementation:
+
+Meaningful name SAN based Onion Association authentication:
+Existing prototype implementations of onion0 and onion1 cases exist,
+both however use the same address format,
+[onion-address]onion.meaningfulname. These prototypes are described in
+[SATA-WPES21] for onion0 and [SAUTE-WPES22] for onion1.  There are two
+separate implementations for the onion1 case.  The respective
+publications also provide pointers to code repositories.
+
+Intentionally leaving the meaningful name unresolvable and unreachable
+after certificate issuance (onion2 and onion3) is not explicitly
+described in the published literature.  It is, however, consistent
+with a setting where resolution of and/or direct access to the
+meaningful name are censored. In this way they reflect discovery of
+the Onion Association via lookup of the meaningful name based on CT
+log entries, e.g., at a CT log monitor as described in [SAUTE-WPES22]
+[OLF], and thus already implemented. As in the last paragraph, the
+address format in prior implementations uses 'onion' simpliciter
+rather than 'onion2' or 'onion3'.
+
+Authenticating Onion Association without any use of the Tor network
+(hence also not using HSDir resolution) when the
+private-onion-key-signed header is sent (i.e., the onion4 case) has
+been implemented and described in the literature [SECDEV19]
+[SATA-WPES21]. Note, however, that the existing implementations assume
+the onion address is resolvable and reachable using Tor protocols. The
+implementations simply support authenticated Onion Association for
+browsers that do not speak to the Tor network. Tor Browser clients
+with the SATA WebExtension that encounter a SATA are routed over the
+Tor network to the onion address. As above, the implementation uses
+SANs containing 'onion' rather than 'onion4'.
+
+Onion address SAN based Onion Association authentication: There
+are no current implementations of Onion Association authentication
+based on an onion address SAN (onion5 and onion6).
+ 
+To update existing implementations to support the ambiguity resolution
+that is the goal of this proposal on the server side for the onion1 or
+onion3 case, all that is required is to obtain the appropriate
+certificate using existing certificate issuance protocols.  For other
+cases, the primary needed change is the substitution of 'onion[n]' for
+'onion' at appropriate places in the codebase.  The primary change
+needed on the client side is a similar substitution.
+
+
+
+Security:
+
+This proposal addresses only authentication of Onion Association.
+Though its provisions contribute to the censorship resistance and/or
+fingerprinting resistance of Onion Association as described in
+[SECDEV19] [SATA-WPES21] [SAUTE-WPES22] [OLF], these are not specific
+goals of this proposal.
+
+References:
+
+[O-L] The Tor Project, "Onion-Location",
+https://community.torproject.org/onion-services/advanced/onion-location/
+
+[ONIONSPEC] The Tor Project, "Special Hostnames in Tor",
+https://spec.torproject.org/address-spec#onion
+
+[SECUREDROP] https://securedrop.org/
+
+[SecDev19] Paul Syverson and Matt Traudt. Self-Authenticating
+Traditional Domain Names. In 2019 IEEE Secure Development (SecDev),
+pages 147–160. IEEE, September 02019.
+https://doi.org/10.1109/SecDev.2019.00030 (paywalled)
+https://blog.pastly.net/papers/secdev19-satdomains.pdf
+
+[SATA-WPES21] Paul Syverson, Matthew Finkel, Saba Eskandarian, and Dan
+Boneh. "Attacks on Onion Discovery and Remedies via
+Self-Authenticating Traditional Addresses". In Proceedings of the 20th
+ACM Workshop on Workshop on Privacy in the Electronic
+Society(WPES’21).ACM Press, 45–52.
+https://doi.org/10.1145/3463676.3485610
+
+[SAUTE-WPES22] Rasmus Dahlberg, Paul Syverson, Linus Nordberg, and
+Matthew Finkel. "Sauteed Onions: Transparent Associations from
+Domain Names to Onion Addresses." In Proceedings of the 21st ACM
+Workshop on Workshop on Privacy in the Electronic Society (WPES ’22).
+ACM Press, 35–40. https://doi.org/10.1145/3559613.3563208
+
+[OLF] Paul Syverson, Rasmus Dahlberg, Tobias Pulls, and Rob Jansen.
+"Onion-Location Measurements and Fingerprinting" Submitted for publication.
