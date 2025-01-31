@@ -1,2 +1,2 @@
 # onion-assoc-tor-proposals
-Place holder
+Draft Tor Proposals for standardizing onion association options.

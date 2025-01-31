@@ -1,9 +1,11 @@
 Filename: ???
-(Working) title:
-Onion Association SANs In Certificates (OASIC)
-Author: Paul Syverson and ???
+Title: Onion Association SANs In Certificates (OASIC)
+Author: Paul Syverson
 Created: ???
 Status: ???
+
+Distribution Statement A:
+Approved for public release. Distribution is unlimited.
 
 Overview:
 
@@ -21,8 +23,8 @@ MUST be expressed in a Subject Alternative Name (SAN) in the TLS
 certificate. Such usage MUST be compatible with existing DV
 certificate issuance protocol standards, though Onion Association
 certificates MAY be EV or OV certificates.  Usage that leverages
-changes to TLS certificate format is described in Proposal ???  Onion
-Association TLS Certificate Extensions (OATCE).
+any changes to TLS certificate format are outside the scope of
+this proposal.
 
 Motivation:
 
@@ -31,13 +33,13 @@ These include, e.g., Onion-Location [O-L] and SecureDrop [SECUREDROP].
 Multiple descriptions of attacks on these have been published, as have
 alternative solutions that leverage TLS certificates [SECDEV19]
 [SATA-WPES21] as well as the Certificate Transparency (CT)
-infrastructure [SAUTE-WPES22] [OLF]. These solutions involve Subject
-Alt Names (SANs) in TLS certificates comprised of onion addresses as
-subdomains of registered domain names in TLS certificates.  For
-Self-Authenticating Traditional Addresses (SATAs) receiving a
-certificate with such a SAN in a TLS handshake implies that an
-authentication header should be expected in that session. For basic
-sauteed onions, no such header should be expected.  But, the SAN
+infrastructure [SAUTE-WPES22] [OLF-PoPETs25]. These solutions involve
+Subject Alt Names (SANs) in TLS certificates comprised of onion
+addresses as subdomains of registered domain names in TLS
+certificates.  For Self-Authenticating Traditional Addresses (SATAs)
+receiving a certificate with such a SAN in a TLS handshake implies
+that an authentication header should be expected in that session. For
+basic sauteed onions, no such header should be expected.  But, the SAN
 encoding of Onion Association in the certificate is the same for both
 in above cited work. Also, sauteed onions imply an onion service
 descriptor in the HSDir DHT, but SATAs might not.  This proposal
@@ -274,9 +276,9 @@ with a setting where resolution of and/or direct access to the
 meaningful name are censored. In this way they reflect discovery of
 the Onion Association via lookup of the meaningful name based on CT
 log entries, e.g., at a CT log monitor as described in [SAUTE-WPES22]
-[OLF], and thus already implemented. As in the last paragraph, the
-address format in prior implementations uses 'onion' simpliciter
-rather than 'onion2' or 'onion3'.
+[OLF-PoPETs25], and thus already implemented. As in the last
+paragraph, the address format in prior implementations uses 'onion'
+simpliciter rather than 'onion2' or 'onion3'.
 
 Authenticating Onion Association without any use of the Tor network
 (hence also not using HSDir resolution) when the
@@ -303,14 +305,13 @@ cases, the primary needed change is the substitution of 'onion[n]' for
 needed on the client side is a similar substitution.
 
 
-
 Security:
 
 This proposal addresses only authentication of Onion Association.
 Though its provisions contribute to the censorship resistance and/or
 fingerprinting resistance of Onion Association as described in
-[SECDEV19] [SATA-WPES21] [SAUTE-WPES22] [OLF], these are not specific
-goals of this proposal.
+[SECDEV19] [SATA-WPES21] [SAUTE-WPES22] [OLF-PoPETs25], these are not
+specific goals of this proposal.
 
 References:
 
@@ -341,5 +342,6 @@ Domain Names to Onion Addresses." In Proceedings of the 21st ACM
 Workshop on Workshop on Privacy in the Electronic Society (WPES ’22).
 ACM Press, 35–40. https://doi.org/10.1145/3559613.3563208
 
-[OLF] Paul Syverson, Rasmus Dahlberg, Tobias Pulls, and Rob Jansen.
-"Onion-Location Measurements and Fingerprinting" Submitted for publication.
+[OLF-PoPETs25] Paul Syverson, Rasmus Dahlberg, Tobias Pulls, and
+Rob Jansen. "Onion-Location Measurements and Fingerprinting"
+In Proceedings on Privacy Enhancing Technologies, Vol. 2025, Issue 2.
